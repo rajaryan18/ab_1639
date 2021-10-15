@@ -1,0 +1,14 @@
+<launch>
+    
+    <node pkg="turtlesim" type="turtlesim_node" name="node_turtlesim_node">
+        <param name="/turtlesim_node/background_r" value="0" />
+        <param name="/turtlesim_node/background_g" value="0" />
+        <param name="/turtlesim_node/background_b" value="0" />
+        <param name="/background_r" value="0" />
+        <param name="/background_g" value="0" />
+        <param name="/background_b" value="0" />
+    </node>
+    
+    <node pkg="pkg_task0" type="task0_circle.py" name="task0_circle" output="screen" />
+
+</launch>
