@@ -13,10 +13,10 @@ class MoveTurtle:
 		self.curr_deg = 0
 
 	def func_ros_sub_callback(self, pose_message): 
-		self.curr_x = pose_message.x
-		self.curr_y = pose_message.y
-		self.curr_theta = pose_message.theta
-		if self.curr_theta < 0: #setting the angle to absolute value if it becomes < zero
+		self.curr_x = pose_message.x # storing current positions/coordinates
+		self.curr_y = pose_message.y 
+		self.curr_theta = pose_message.theta #storing current angles
+		if self.curr_theta < 0: #setting the current angle to absolute value if it becomes < zero
 			self.curr_deg = 360 - abs(math.degrees(self.curr_theta))
 		else:
 			self.curr_deg = abs(math.degrees(self.curr_theta))
@@ -30,14 +30,14 @@ class MoveTurtle:
 
 		handle_pub_vel = rospy.Publisher('/turtle1/cmd_vel', Twist, queue_size=10) #publishing to a topic 
 		lin_vel = 0.8
-		#ang_vel = 0.5
+		
 		max_degree = 360
 
-		obj_velocity_mssg.linear.x = lin_vel
+		obj_velocity_mssg.linear.x = lin_vel # setting linear velocity to 0.8
 		obj_velocity_mssg.angular.z = ang_vel
 
 
-		while round(current_degree) < round(max_degree):#circle movement code 
+		while round(current_degree) < round(max_degree):#circle movement commands
 			handle_pub_vel.publish(obj_velocity_mssg)
 
 			current_degree = self.curr_deg - start_degree
@@ -45,7 +45,7 @@ class MoveTurtle:
 
 		obj_velocity_mssg.linear.x = 0
 		obj_velocity_mssg.angular.z = 0
-		handle_pub_vel.publish(obj_velocity_mssg)
+		handle_pub_vel.publish(obj_velocity_mssg) #stopping the turtle
         
         
 
