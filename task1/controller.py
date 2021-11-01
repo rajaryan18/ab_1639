@@ -38,7 +38,8 @@ def laser_callback(msg):
 		'bleft': min(min(msg.ranges[600:719]), range_max),
     }
     
-def move_circle(pub):
+
+def move_circle(pub ,z):
     print("Semicircle")
     # Create a publisher which can "talk" to Turtlesim and tell it to move
     #pub = rospy.Publisher('turtle1/cmd_vel', Twist, queue_size=1)
@@ -46,7 +47,7 @@ def move_circle(pub):
     # Create a Twist message and add linear x and angular z values
     move_cmd = Twist()
     move_cmd.linear.x = 0.8
-    move_cmd.angular.z = 2.2
+    move_cmd.angular.z = z
 
     # Save current time and set publish rate at 10 Hz
     now = rospy.Time.now()
@@ -58,6 +59,7 @@ def move_circle(pub):
     	print(regions)
     	pub.publish(move_cmd)
     	rate.sleep()
+
     print("done")  
 
 def control_loop():
@@ -84,7 +86,7 @@ def control_loop():
     		velocity_msg.linear.x = 0.7
     		pub.publish(velocity_msg)
     		rate.sleep()
-    	move_circle(pub)
+    	move_circle(pub,2.2)
 
     	while regions['lfront'] < 2 or regions['bleft']<2:
     		print(regions)
@@ -92,9 +94,25 @@ def control_loop():
     		velocity_msg.linear.x = 0.7
     		pub.publish(velocity_msg)
     		rate.sleep()
-    	move_circle(pub)
+    	move_circle(pub,2.2)
+    	
+    	while regions['bright'] < 2 or regions['rfront'] < 2:
+    		print(regions)
+    		print("5")
+    		velocity_msg.linear.x = 0.7
+    		pub.publish(velocity_msg)
+    		rate.sleep()
+    	move_circle(pub,-3.5)
+
+    	while regions['lfront'] < 2 or regions['bleft']<2:
+    		print(regions)
+    		print("7")
+    		velocity_msg.linear.x = 0.7
+    		pub.publish(velocity_msg)
+    		rate.sleep()
+    	move_circle(pub,-3.5)
     	velocity_msg.linear.x = 0
-    	velocity_msg.linear.z = 0
+    	velocity_msg.angular.z = 0
     	pub.publish(velocity_msg)
     	
 	
