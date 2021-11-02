@@ -45,14 +45,14 @@ def forward(pub, regionOne, distOne, regionTwo, distTwo, last):
 	rate = rospy.Rate(20)
 	if last == True:
 		while regions[regionOne] < distOne or regions[regionTwo] > distTwo:
-			velocity_msg.linear.x = 0.5
+			velocity_msg.linear.x = 0.6
 			pub.publish(velocity_msg)
 			rate.sleep()
 		velocity_msg.linear.x = 0
 		pub.publish(velocity_msg)
 	else:
 		while regions[regionOne] < distOne or regions[regionTwo] < distTwo:
-			velocity_msg.linear.x = 0.5
+			velocity_msg.linear.x = 0.6
 			pub.publish(velocity_msg)
 			rate.sleep()
 		velocity_msg.linear.x = 0
@@ -66,7 +66,7 @@ def moveExtra(pub, direction, dist):
 	if direction == 'left':
 		x = pose[0]
 		while pose[0] > (x-dist):
-			velocity_msg.linear.x = 0.5
+			velocity_msg.linear.x = 0.6
 			pub.publish(velocity_msg)
 			rate.sleep()
 		velocity_msg.linear.x = 0
@@ -74,7 +74,7 @@ def moveExtra(pub, direction, dist):
 	elif direction == 'right':
 		x = pose[0]
 		while pose[0] < (x+dist):
-			velocity_msg.linear.x = 0.5
+			velocity_msg.linear.x = 0.6
 			pub.publish(velocity_msg)
 			rate.sleep()
 		velocity_msg.linear.x = 0
@@ -82,7 +82,7 @@ def moveExtra(pub, direction, dist):
 	elif direction == 'up':
 		y = pose[1]
 		while pose[1] < (y+dist):
-			velocity_msg.linear.x = 0.5
+			velocity_msg.linear.x = 0.6
 			pub.publish(velocity_msg)
 			rate.sleep()
 		velocity_msg.linear.x = 0
@@ -90,7 +90,7 @@ def moveExtra(pub, direction, dist):
 	else:
 		y = pose[1]
 		while pose[1] > (y-dist):
-			velocity_msg.linear.x = 0.5
+			velocity_msg.linear.x = 0.6
 			pub.publish(velocity_msg)
 			rate.sleep()
 		velocity_msg.linear.x = 0
@@ -100,17 +100,19 @@ def moveExtra(pub, direction, dist):
 def rotate(pub, direction, angle):
 	global pose
 	velocity_msg = Twist()
-	rate = rospy.Rate(30)
+	rate = rospy.Rate(20)
 	if direction == 'left':
 		ch = 1
 		while pose[2] < angle:
+			if angle == 3.14 and pose[2] < 0:
+				break
 			velocity_msg.angular.z = 0.5
 			pub.publish(velocity_msg)
 			rate.sleep()
 		velocity_msg.angular.z = 0
 		pub.publish(velocity_msg)
 		if pose[2] != angle:
-			while pose[2] < 0 or pose[2] > angle:
+			while pose[2] < -2 or pose[2] > angle:
 				velocity_msg.angular.z = -0.5
 				pub.publish(velocity_msg)
 				rate.sleep()
@@ -148,34 +150,25 @@ def control_loop():
 	global pose
 	global regions
 	PI = 3.1415926535897
-
 	rospy.init_node('ebot_controller')
 	pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
 	rospy.Subscriber('/ebot/laser/scan', LaserScan, laser_callback)
 	rospy.Subscriber('/odom', Odometry, odom_callback)
 	rate = rospy.Rate(20) 
-
 	velocity_msg = Twist()
-	velocity_msg.linear.x = 0
-	velocity_msg.angular.z = 0
-	pub.publish(velocity_msg)
-	rotate(pub, 'left', 3.1)
-	forward(pub, 'bright', 2, 'rfront', 2, False)
-	moveExtra(pub, 'left', 0.5)
-	rotate(pub, 'right', 1.53)
-	forward(pub, 'bright', 2, 'rfront', 2, False)
-	moveExtra(pub, 'up', 0.55)
-	rotate(pub, 'right', -0.01)
-	moveExtra(pub, 'right', 0.3)
-	forward(pub, 'bright', 1, 'fright', 0.9, True)
-	rotate(pub, 'right', -1.57)
-	forward(pub, 'bright', 1, 'bleft', 1, False)
-	moveExtra(pub, 'down', 0.7)
-	rotate(pub, 'left', 0.05)
 	forward(pub, 'bleft', 2, 'lfront', 2, False)
-	moveExtra(pub, 'right', 0.7)
-	rotate(pub, 'left', 1.56)
-	forward(pub, 'bleft', 2, 'lfront', 1, False)
+	moveExtra(pub, 'up', 0.6)
+	rotate(pub, 'left', 3.14)
+	forward(pub, 'bleft', 2, 'lfront', 2, False)
+	moveExtra(pub, 'left', 0.65)
+	rotate(pub, 'left', -1.57)
+	forward(pub, 'bleft', 2, 'lfront', 2, False)
+	moveExtra(pub, 'down', 0.67)
+	rotate(pub, 'left', -0.01)
+	forward(pub, 'bleft', 2, 'lfront', 2, False)
+	moveExtra(pub, 'right', 0.65)
+	rotate(pub, 'left', 1.57)
+	forward(pub, 'bleft', 2, 'lfront', 2, False)
 	rate.sleep()
 
 
