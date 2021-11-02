@@ -19,7 +19,7 @@ def get_rotation (msg):
 rospy.init_node('rotate_robot')
 
 sub = rospy.Subscriber ('/odom', Odometry, get_rotation)
-pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
+pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
 r = rospy.Rate(10)
 command =Twist()
 
