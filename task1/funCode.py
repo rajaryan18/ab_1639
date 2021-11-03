@@ -112,7 +112,7 @@ def rotate(pub, direction, angle):
 		while pose[2] < angle:
 			if angle == 3.14 and pose[2] < 0:
 				break
-			velocity_msg.angular.z = 0.5
+			velocity_msg.angular.z = 0.6
 			pub.publish(velocity_msg)
 			rate.sleep()
 			print("Controller message pushed at {}".format(rospy.get_time()))
@@ -120,34 +120,40 @@ def rotate(pub, direction, angle):
 		pub.publish(velocity_msg)
 		if pose[2] != angle:
 			while pose[2] < -2 or pose[2] > angle:
-				velocity_msg.angular.z = -0.5
+				velocity_msg.angular.z = -0.6
 				pub.publish(velocity_msg)
 				rate.sleep()
 				ch = 0
 			while pose[2] < angle and ch == 1:
-				velocity_msg.angular.z = 0.5
+				velocity_msg.angular.z = 0.6
 				pub.publish(velocity_msg)
 				rate.sleep()
 				print("Controller message pushed at {}".format(rospy.get_time()))
 			velocity_msg.angular.z = 0
 			pub.publish(velocity_msg)
 	else:
-		while pose[2] > angle:
-			velocity_msg.angular.z = -0.5
+		while pose[2] < 0 and angle > 0:
+			velocity_msg.angular.z = -0.6
 			pub.publish(velocity_msg)
-			rate.sleep()print("Controller message pushed at {}".format(rospy.get_time()))
+			rate.sleep()
+			print("Controller message pushed at {}".format(rospy.get_time()))
+		while pose[2] > angle:
+			velocity_msg.angular.z = -0.6
+			pub.publish(velocity_msg)
+			rate.sleep()
+			print("Controller message pushed at {}".format(rospy.get_time()))
 		velocity_msg.angular.z = 0
 		pub.publish(velocity_msg)
 		if pose[2] != angle:
 			ch = 1
 			while pose[2] < angle:
-				velocity_msg.angular.z = 0.5
+				velocity_msg.angular.z = 0.6
 				pub.publish(velocity_msg)
 				rate.sleep()
 				print("Controller message pushed at {}".format(rospy.get_time()))
 				ch = 0
 			while pose[2] > angle and ch == 1:
-				velocity_msg.angular.z = -0.5
+				velocity_msg.angular.z = -0.6
 				pub.publish(velocity_msg)
 				rate.sleep()
 				print("Controller message pushed at {}".format(rospy.get_time()))
@@ -168,17 +174,17 @@ def control_loop():
 	velocity_msg = Twist()
 	forward(pub, 'bleft', 2, 'lfront', 2, False)
 	moveExtra(pub, 'up', 0.6)
-	rotate(pub, 'left', 3.14)
-	forward(pub, 'bleft', 2, 'lfront', 2, False)
-	moveExtra(pub, 'left', 0.65)
-	rotate(pub, 'left', -1.57)
-	forward(pub, 'bleft', 2, 'lfront', 2, False)
-	moveExtra(pub, 'down', 0.67)
-	rotate(pub, 'left', -0.01)
-	forward(pub, 'bleft', 2, 'lfront', 2, False)
+	rotate(pub, 'right', 0)
+	forward(pub, 'bright', 2, 'rfront', 2, False)
 	moveExtra(pub, 'right', 0.65)
-	rotate(pub, 'left', 1.57)
-	forward(pub, 'bleft', 2, 'lfront', 2, False)
+	rotate(pub, 'right', -1.59)
+	forward(pub, 'bright', 2, 'rfront', 2, False)
+	moveExtra(pub, 'down', 0.67)
+	rotate(pub, 'right', 3.12)
+	forward(pub, 'bright', 2, 'rfront', 2, False)
+	moveExtra(pub, 'left', 0.65)
+	rotate(pub, 'right', 1.57)
+	forward(pub, 'bright', 2, 'rfront', 2, False)
 	rate.sleep()
 
 
