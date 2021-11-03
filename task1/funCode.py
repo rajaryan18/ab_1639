@@ -48,6 +48,7 @@ def forward(pub, regionOne, distOne, regionTwo, distTwo, last):
 			velocity_msg.linear.x = 0.6
 			pub.publish(velocity_msg)
 			rate.sleep()
+			print("Controller message pushed at {}".format(rospy.get_time()))
 		velocity_msg.linear.x = 0
 		pub.publish(velocity_msg)
 	else:
@@ -55,6 +56,7 @@ def forward(pub, regionOne, distOne, regionTwo, distTwo, last):
 			velocity_msg.linear.x = 0.6
 			pub.publish(velocity_msg)
 			rate.sleep()
+			print("Controller message pushed at {}".format(rospy.get_time()))
 		velocity_msg.linear.x = 0
 		pub.publish(velocity_msg)
 
@@ -69,6 +71,7 @@ def moveExtra(pub, direction, dist):
 			velocity_msg.linear.x = 0.6
 			pub.publish(velocity_msg)
 			rate.sleep()
+			print("Controller message pushed at {}".format(rospy.get_time()))
 		velocity_msg.linear.x = 0
 		pub.publish(velocity_msg)
 	elif direction == 'right':
@@ -77,6 +80,7 @@ def moveExtra(pub, direction, dist):
 			velocity_msg.linear.x = 0.6
 			pub.publish(velocity_msg)
 			rate.sleep()
+			print("Controller message pushed at {}".format(rospy.get_time()))
 		velocity_msg.linear.x = 0
 		pub.publish(velocity_msg)
 	elif direction == 'up':
@@ -85,6 +89,7 @@ def moveExtra(pub, direction, dist):
 			velocity_msg.linear.x = 0.6
 			pub.publish(velocity_msg)
 			rate.sleep()
+			print("Controller message pushed at {}".format(rospy.get_time()))
 		velocity_msg.linear.x = 0
 		pub.publish(velocity_msg)
 	else:
@@ -93,6 +98,7 @@ def moveExtra(pub, direction, dist):
 			velocity_msg.linear.x = 0.6
 			pub.publish(velocity_msg)
 			rate.sleep()
+			print("Controller message pushed at {}".format(rospy.get_time()))
 		velocity_msg.linear.x = 0
 		pub.publish(velocity_msg)
 
@@ -109,6 +115,7 @@ def rotate(pub, direction, angle):
 			velocity_msg.angular.z = 0.5
 			pub.publish(velocity_msg)
 			rate.sleep()
+			print("Controller message pushed at {}".format(rospy.get_time()))
 		velocity_msg.angular.z = 0
 		pub.publish(velocity_msg)
 		if pose[2] != angle:
@@ -121,13 +128,14 @@ def rotate(pub, direction, angle):
 				velocity_msg.angular.z = 0.5
 				pub.publish(velocity_msg)
 				rate.sleep()
+				print("Controller message pushed at {}".format(rospy.get_time()))
 			velocity_msg.angular.z = 0
 			pub.publish(velocity_msg)
 	else:
 		while pose[2] > angle:
 			velocity_msg.angular.z = -0.5
 			pub.publish(velocity_msg)
-			rate.sleep()
+			rate.sleep()print("Controller message pushed at {}".format(rospy.get_time()))
 		velocity_msg.angular.z = 0
 		pub.publish(velocity_msg)
 		if pose[2] != angle:
@@ -136,11 +144,13 @@ def rotate(pub, direction, angle):
 				velocity_msg.angular.z = 0.5
 				pub.publish(velocity_msg)
 				rate.sleep()
+				print("Controller message pushed at {}".format(rospy.get_time()))
 				ch = 0
 			while pose[2] > angle and ch == 1:
 				velocity_msg.angular.z = -0.5
 				pub.publish(velocity_msg)
 				rate.sleep()
+				print("Controller message pushed at {}".format(rospy.get_time()))
 			velocity_msg.angular.z = 0
 			pub.publish(velocity_msg)
 
