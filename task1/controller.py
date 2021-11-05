@@ -108,9 +108,9 @@ def rotate(pub, direction, angle): #function for the rotation of the bot, 'angle
 	velocity_msg = Twist()
 	rate = rospy.Rate(20)
 	if direction == 'left':   
-		ch = 1
+		ch = 1 #treating it as a flag
 		while pose[2] < angle:
-			if angle == 3.14 and pose[2] < 0:
+			if angle == 3.14 and pose[2] < 0: # checking if the desired angle of rotation is attained
 				break
 			velocity_msg.angular.z = 0.5
 			pub.publish(velocity_msg)
@@ -118,20 +118,20 @@ def rotate(pub, direction, angle): #function for the rotation of the bot, 'angle
 			print("Controller message pushed at {}".format(rospy.get_time()))
 		velocity_msg.angular.z = 0
 		pub.publish(velocity_msg)
-		if pose[2] != angle:
-			while pose[2] < -2 or pose[2] > angle: #the bot will rotate as long as the desired angle of rotation os not attained
+		if pose[2] != angle: #checking angle
+			while pose[2] < -2 or pose[2] > angle: #the bot will rotate as long as the desired angle of rotation is not attained(clockwise)
 				velocity_msg.angular.z = -0.5
 				pub.publish(velocity_msg)
 				rate.sleep()
 				ch = 0
-			while pose[2] < angle and ch == 1:
+			while pose[2] < angle and ch == 1: #will rotate in anti-clockwise direction
 				velocity_msg.angular.z = 0.5
 				pub.publish(velocity_msg)
 				rate.sleep()
 				print("Controller message pushed at {}".format(rospy.get_time()))
 			velocity_msg.angular.z = 0
 			pub.publish(velocity_msg)
-	else:
+	else: #similar code for right direction
 		while pose[2] > angle:
 			velocity_msg.angular.z = -0.5
 			pub.publish(velocity_msg)
