@@ -1,0 +1,202 @@
+#!/usr/bin/env python3
+import rospy
+import math
+from geometry_msgs.msg import Twist
+from sensor_msgs.msg import LaserScan
+from nav_msgs.msg import Odometry
+from tf.transformations import euler_from_quaternion
+''' velocity_msg.linear.x = 0.4
+        velocity_msg.angular.z = 0.0
+        pub.publish(velocity_msg)
+        print("lfront: {1} bleft: {2} fleft:{3}",regions['lfront'],regions['bleft'],regions['fleft'])
+        while regions['lfront'] > 2 and regions['fleft'] >1.9 :
+        	velocity_msg.angular.z = 0.5
+        	velocity_msg.linear.x = 0.2
+        	pub.publish(velocity_msg)
+        	print("Controller message pushed at {}".format(rospy.get_time()))
+        	rate.sleep()
+        velocity_msg.linear.x = 0.4
+        velocity_msg.angular.z = 0.0
+'''
+pose = [0.8, -1.3609, 1.570159]
+regions = {
+		'bright':   1,
+		'fright':   1,
+		'rfront':   1,
+		'lfront':   1,
+		'fleft':    1,
+		'bleft':    1
+	    }
+kill = False
+z = 1
+def odom_callback(data):
+    global pose
+    x  = data.pose.pose.orientation.x;
+    y  = data.pose.pose.orientation.y;
+    z = data.pose.pose.orientation.z;
+    w = data.pose.pose.orientation.w;
+    pose = [data.pose.pose.position.x, data.pose.pose.position.y, euler_from_quaternion([x,y,z,w])[2]]	# pose has x,y,z which are pitch, yaw, roll yaw {pose[2]} is usefull as of now 
+    #print(pose)
+    
+def error():
+	global kill
+	if regions['fright'] < 0.8500 and regions['fleft'] < 0.8500 and regions['lfront'] < 0.600 and regions['rfront']  < 0.600 :  
+		print("Bot Boxed in")
+		kill = True
+	return
+def check_l():
+	global regions
+	global kill
+	if regions['fleft'] >0.8500 and regions['lfront']  > 0.8800 :
+		return True
+	else:
+		return False
+
+def turn_left(velocity_msg, pub, rate):
+	global pose
+	global kill
+	init_pose = pose[2]
+	while check_l():
+		velocity_msg.linear.x = 0.0
+		pub.publish(velocity_msg)
+		while abs(pose[2] - init_pose)  < 1.5708:
+			print(pose)
+			velocity_msg.angular.z = 0.5
+			pub.publish(velocity_msg)
+			print(regions)
+			rate.sleep()	
+		velocity_msg.angular.z = 0.0
+		pub.publish(velocity_msg)
+		return
+	if not check_l():
+		velocity_msg.linear.x = 0.0
+		pub.publish(velocity_msg)
+		rate.sleep()
+		print('no space in the left')
+		error()
+		return
+def check_r():
+	global regions
+	global kill
+	if regions['fright'] >0.8500 and regions['rfront']  > 0.8800 :
+		return True
+	else:
+		return False
+
+def turn_right(velocity_msg, pub, rate):
+	global pose
+	global kill
+	x = 0
+	if x == 0: 
+		init_pose = pose[2]
+		x+=1
+	while check_r():
+		velocity_msg.linear.x = 0.0
+		pub.publish(velocity_msg)
+		while abs(pose[2] - init_pose)  < 1.5708:
+			print(pose)
+			velocity_msg.angular.z = -0.5
+			pub.publish(velocity_msg)
+			print(regions)
+			rate.sleep()
+		velocity_msg.angular.z = 0.0
+		pub.publish(velocity_msg)
+		return
+	if not check_r():
+		velocity_msg.linear.x = 0.0
+		pub.publish(velocity_msg)
+		rate.sleep()
+		print('no space in the right')
+		error()
+		return
+
+def check_fwd(x_axis):
+	global regions
+	global kill
+	global z
+	init_pose = pose[2]
+	if abs((pose[2]-init_pose)/init_pose) > 0.05 :
+		print("Off-Course")
+		return False
+	if z == 1:
+		if regions['lfront'] > 0.600 and regions['rfront']  > 0.600 and pose[1] < x_axis :
+			return True
+	elif z == -1 :	
+		if regions['lfront'] > 0.600 and regions['rfront']  > 0.600 and pose[1] > x_axis :
+			return True	
+	else :
+		return False
+
+def check_fwd_corner(x_axis):
+	global regions
+	global pose
+	global kill
+	global z
+	if z == 1 :
+		if regions['lfront'] > 0.600 and regions['rfront']  > 0.600 and pose[0] < x_axis :
+			return True
+	elif z == -1 :
+		if regions['lfront'] > 0.600 and regions['rfront']  > 0.600 and pose[0] > x_axis :
+			return True
+	else :
+		return False
+
+def move_fwd(velocity_msg, pub, rate, check_func, x_axis = 10, n = 1):
+	global chk_fwd
+	global pose
+	global kill
+	global z
+	z = n
+	while check_func(x_axis):
+		velocity_msg.linear.x = 0.5
+		pub.publish(velocity_msg)
+		rate.sleep()
+		#print(regions)
+		print(pose)
+	if not check_func(x_axis):
+		velocity_msg.linear.x = 0.0
+		pub.publish(velocity_msg)
+		rate.sleep()
+		print("obstacle ahead")
+		error()
+		return
+		
+		
+def laser_callback(msg):
+	range_max = 10.0
+	global regions
+	regions = {
+		'bright':   min(min(msg.ranges[0:119]),range_max),
+		'fright':   min(min(msg.ranges[120:239]),range_max),
+		'rfront':    min(min(msg.ranges[240:359]),range_max),
+		'lfront':    min(min(msg.ranges[360:479]),range_max),
+		'fleft':    min(min(msg.ranges[480:599]),range_max),
+		'bleft':    min(min(msg.ranges[600:719]),range_max),
+	    }
+
+
+def control_loop():
+    rospy.init_node('ebot_controller')
+    
+    pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+    rospy.Subscriber('/ebot/laser/scan', LaserScan, laser_callback)
+    rospy.Subscriber('/odom', Odometry, odom_callback)
+    
+    rate = rospy.Rate(10) 
+    velocity_msg = Twist()
+    #while not rospy.is_shutdown():
+    #move_fwd(velocity_msg, pub, rate)
+    turn_right(velocity_msg, pub, rate)
+    move_fwd(velocity_msg, pub, rate, check_fwd_corner, 2.250)
+    turn_left(velocity_msg, pub, rate)
+    move_fwd(velocity_msg, pub, rate, check_fwd, 8.5100)
+    turn_left(velocity_msg, pub, rate)
+    move_fwd(velocity_msg, pub, rate, check_fwd_corner, -1.200, -1)
+    turn_left(velocity_msg, pub, rate)
+    move_fwd(velocity_msg, pub, rate, check_fwd, 0.800, -1)
+    turn_left(velocity_msg, pub, rate)
+if __name__ == '__main__':
+    try:
+        control_loop()
+    except rospy.ROSInterruptException:
+        pass
