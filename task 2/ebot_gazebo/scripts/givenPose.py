@@ -17,47 +17,44 @@ class Ur5Moveit:
 	def __init__(self):
 
 		rospy.init_node('node_eg3_set_joint_angles', anonymous=True)
-
-		self._planning_group = "arm_control"
 		self._commander = moveit_commander.roscpp_initialize(sys.argv)
 		self._robot = moveit_commander.RobotCommander()
 		self._scene = moveit_commander.PlanningSceneInterface()
-		self._group = moveit_commander.MoveGroupCommander(self._planning_group)
+
+		#dictionary of all planning groups to be used
+		self._group = {"arm_control": moveit_commander.MoveGroupCommander("arm_control"), "ur5_1_planning_group": moveit_commander.MoveGroupCommander("ur5_1_planning_group")}
+		
 		self._display_trajectory_publisher = rospy.Publisher('/move_group/display_planned_path', moveit_msgs.msg.DisplayTrajectory, queue_size=1)
 
 		self._exectute_trajectory_client = actionlib.SimpleActionClient('execute_trajectory', moveit_msgs.msg.ExecuteTrajectoryAction)
 		self._exectute_trajectory_client.wait_for_server()
 
-		self._planning_frame = self._group.get_planning_frame()
-		self._eef_link = self._group.get_end_effector_link()
 		self._group_names = self._robot.get_group_names()
 		self._box_name = 'agribot'
 
         # Current State of the Robot is needed to add box to planning scene
 		self._curr_state = self._robot.get_current_state()
 
-		rospy.loginfo('\033[94m' + "Planning Group: {}".format(self._planning_frame) + '\033[0m')
-		rospy.loginfo('\033[94m' + "End Effector Link: {}".format(self._eef_link) + '\033[0m')
 		rospy.loginfo('\033[94m' + "Group Names: {}".format(self._group_names) + '\033[0m')
 
 		rospy.loginfo('\033[94m' + " >>> Ur5Moveit init done." + '\033[0m')
 
-	def go_to_pose(self, arg_pose):
+	def go_to_pose(self, arg_pose, groupName):
 
-		pose_values = self._group.get_current_pose().pose
+		pose_values = self._group[groupName].get_current_pose().pose
 		rospy.loginfo('\033[94m' + ">>> Current Pose:" + '\033[0m')
 		rospy.loginfo(pose_values)
 
-		self._group.set_pose_target(arg_pose)
-		self._group.set_goal_tolerance(0.01)
-		self._group.plan()
-		flag_plan = self._group.go(wait=True)  # wait=False for Async Move
+		self._group[groupName].set_pose_target(arg_pose)
+		self._group[groupName].set_goal_tolerance(0.01)
+		self._group[groupName].plan()
+		flag_plan = self._group[groupName].go(wait=True)  # wait=False for Async Move
 
-		pose_values = self._group.get_current_pose().pose
+		pose_values = self._group[groupName].get_current_pose().pose
 		rospy.loginfo('\033[94m' + ">>> Final Pose:" + '\033[0m')
 		rospy.loginfo(pose_values)
 
-		list_joint_values = self._group.get_current_joint_values()
+		list_joint_values = self._group[groupName].get_current_joint_values()
 		rospy.loginfo('\033[94m' + ">>> Final Joint Values:" + '\033[0m')
 		rospy.loginfo(list_joint_values)
 
@@ -67,13 +64,14 @@ class Ur5Moveit:
 			rospy.logerr('\033[94m' + ">>> go_to_pose() Failed. Solution for Pose not Found." + '\033[0m')
 			
 			
-	def go_to_predefined_pose(self, arg_pose_name):
+	def go_to_predefined_pose(self, arg_pose_name, groupName):
 		rospy.loginfo('\033[94m' + "Going to Pose: {}".format(arg_pose_name) + '\033[0m')
-		self._group.set_named_target(arg_pose_name)
-		plan = self._group.plan()
+		self._group[groupName].set_named_target(arg_pose_name)
+		self._group[groupName].set_goal_tolerance(0.01)
+		plan = self._group[groupName].plan()
 		goal = moveit_msgs.msg.ExecuteTrajectoryGoal()
 		goal.trajectory = plan
-		flag_plan = self._group.go(wait=True)
+		flag_plan = self._group[groupName].go(wait=True)
 		rospy.loginfo('\033[94m' + "Now at Pose: {}".format(arg_pose_name) + '\033[0m')
 
 
@@ -84,7 +82,7 @@ class Ur5Moveit:
 		
 		
 def euler_to_quaternion(yaw, pitch, roll):
-
+	#function to convert euler angles to quaternion
 	qx = np.sin(roll/2) * np.cos(pitch/2) * np.cos(yaw/2) - np.cos(roll/2) * np.sin(pitch/2) * np.sin(yaw/2)
 	qy = np.cos(roll/2) * np.sin(pitch/2) * np.cos(yaw/2) + np.sin(roll/2) * np.cos(pitch/2) * np.sin(yaw/2)
 	qz = np.cos(roll/2) * np.cos(pitch/2) * np.sin(yaw/2) - np.sin(roll/2) * np.sin(pitch/2) * np.cos(yaw/2)
@@ -93,31 +91,101 @@ def euler_to_quaternion(yaw, pitch, roll):
 	return [qx, qy, qz, qw]
 
 
-def main():
+def backToOrigin(ur5):
+	ur5.go_to_predefined_pose('closed', 'ur5_1_planning_group') #capture the tomato
+	rospy.sleep(1)
+	ur5.go_to_predefined_pose('allZero', 'arm_control') #go back to the initial pose
+	rospy.sleep(1)
+	ur5.go_to_predefined_pose('open', 'ur5_1_planning_group') #dropping the tomato in the basket
 
-	ur5 = Ur5Moveit()	
-	
-	ur5.go_to_predefined_pose("shoulder_move")
-	rospy.sleep(2)
+
+def main():
+	#initialize the class
+	ur5 = Ur5Moveit()
+
+	ur5.go_to_predefined_pose('shoulder_move', 'arm_control')
+	rospy.sleep(0.5)
+
+	#towards the plant: +y, towards the basket: +x
+	#Going right above the bottom tomato
 	ur5_pose_1 = geometry_msgs.msg.Pose()
-	ur5_pose_1.position.x = 0.0327
-	ur5_pose_1.position.y = 0.301044
+	ur5_pose_1.position.x = 0.0377
+	ur5_pose_1.position.y = 0.281044
 	ur5_pose_1.position.z = 0.874534
-	ur5_pose_1.orientation.x = euler_to_quaternion(-2.7, -0.0024, -3.1)[0]
-	ur5_pose_1.orientation.y = euler_to_quaternion(-2.7, -0.0024, -3.1)[1]
-	ur5_pose_1.orientation.z = euler_to_quaternion(-2.7, -0.0024, -3.1)[2]
-	ur5_pose_1.orientation.w = euler_to_quaternion(-2.7, -0.0024, -3.1)[3]
-	ur5.go_to_pose(ur5_pose_1)
-	
+	ur5_pose_1.orientation.x = euler_to_quaternion(-2.8, -0.0024, -3.1)[0]
+	ur5_pose_1.orientation.y = euler_to_quaternion(-2.8, -0.0024, -3.1)[1]
+	ur5_pose_1.orientation.z = euler_to_quaternion(-2.8, -0.0024, -3.1)[2]
+	ur5_pose_1.orientation.w = euler_to_quaternion(-2.8, -0.0024, -3.1)[3]
+	ur5.go_to_pose(ur5_pose_1, 'arm_control')
+	rospy.sleep(1)
+	#Lowering it to surround the bottom tomato
 	ur5_pose_2 = geometry_msgs.msg.Pose()
-	ur5_pose_2.position.x = 0.0327
-	ur5_pose_2.position.y = 0.301044
-	ur5_pose_2.position.z = 0.674534
-	ur5_pose_2.orientation.x = euler_to_quaternion(-2.7, -0.0024, -3.1)[0]
-	ur5_pose_2.orientation.y = euler_to_quaternion(-2.7, -0.0024, -3.1)[1]
-	ur5_pose_2.orientation.z = euler_to_quaternion(-2.7, -0.0024, -3.1)[2]
-	ur5_pose_2.orientation.w = euler_to_quaternion(-2.7, -0.0024, -3.1)[3]
-	ur5.go_to_pose(ur5_pose_2)
+	ur5_pose_2.position.x = 0.0377
+	ur5_pose_2.position.y = 0.281044
+	ur5_pose_2.position.z = 0.704534
+	ur5_pose_2.orientation.x = euler_to_quaternion(-2.8, -0.0024, -3.1)[0]
+	ur5_pose_2.orientation.y = euler_to_quaternion(-2.8, -0.0024, -3.1)[1]
+	ur5_pose_2.orientation.z = euler_to_quaternion(-2.8, -0.0024, -3.1)[2]
+	ur5_pose_2.orientation.w = euler_to_quaternion(-2.8, -0.0024, -3.1)[3]
+	ur5.go_to_pose(ur5_pose_2, 'arm_control')
+
+	rospy.sleep(0.5)
+	backToOrigin(ur5)
+	rospy.sleep(0.5)
+
+	ur5.go_to_predefined_pose('shoulder_move', 'arm_control')
+
+	#Going right in front of the middle tomato
+	ur5_pose_1 = geometry_msgs.msg.Pose()
+	ur5_pose_1.position.x = 0.0307
+	ur5_pose_1.position.y = 0.3044
+	ur5_pose_1.position.z = 0.944534
+	ur5_pose_1.orientation.x = euler_to_quaternion(2.9, -0.0024, -3.1)[0]
+	ur5_pose_1.orientation.y = euler_to_quaternion(2.9, -0.0024, -3.1)[1]
+	ur5_pose_1.orientation.z = euler_to_quaternion(2.9, -0.0024, -3.1)[2]
+	ur5_pose_1.orientation.w = euler_to_quaternion(2.9, -0.0024, -3.1)[3]
+	ur5.go_to_pose(ur5_pose_1, 'arm_control')
+
+	#Moving foward to surround the middle tomato
+	ur5_pose_2 = geometry_msgs.msg.Pose()
+	ur5_pose_2.position.x = 0.0307
+	ur5_pose_2.position.y = 0.3544
+	ur5_pose_2.position.z = 0.944534
+	ur5_pose_2.orientation.x = euler_to_quaternion(2.9, -0.0024, -3.1)[0]
+	ur5_pose_2.orientation.y = euler_to_quaternion(2.9, -0.0024, -3.1)[1]
+	ur5_pose_2.orientation.z = euler_to_quaternion(2.9, -0.0024, -3.1)[2]
+	ur5_pose_2.orientation.w = euler_to_quaternion(2.9, -0.0024, -3.1)[3]
+	ur5.go_to_pose(ur5_pose_2, 'arm_control')
+
+	rospy.sleep(0.5)
+	backToOrigin(ur5)
+
+	ur5.go_to_predefined_pose('shoulder_move', 'arm_control')
+
+	#Going right below of the top tomato
+	ur5_pose_1 = geometry_msgs.msg.Pose()
+	ur5_pose_1.position.x = 0.0387
+	ur5_pose_1.position.y = 0.3324
+	ur5_pose_1.position.z = 1.104534
+	ur5_pose_1.orientation.x = euler_to_quaternion(-2.2, -0.0024, -3.1)[0]
+	ur5_pose_1.orientation.y = euler_to_quaternion(-2.2, -0.0024, -3.1)[1]
+	ur5_pose_1.orientation.z = euler_to_quaternion(-2.2, -0.0024, -3.1)[2]
+	ur5_pose_1.orientation.w = euler_to_quaternion(-2.2, -0.0024, -3.1)[3]
+	ur5.go_to_pose(ur5_pose_1, 'arm_control')
+
+	#Lifting it to surround the top tomato
+	ur5_pose_2 = geometry_msgs.msg.Pose()
+	ur5_pose_2.position.x = 0.0387
+	ur5_pose_2.position.y = 0.3304
+	ur5_pose_2.position.z = 1.204534
+	ur5_pose_2.orientation.x = euler_to_quaternion(-2.2, -0.0024, -3.1)[0]
+	ur5_pose_2.orientation.y = euler_to_quaternion(-2.2, -0.0024, -3.1)[1]
+	ur5_pose_2.orientation.z = euler_to_quaternion(-2.2, -0.0024, -3.1)[2]
+	ur5_pose_2.orientation.w = euler_to_quaternion(-2.2, -0.0024, -3.1)[3]
+	ur5.go_to_pose(ur5_pose_2, 'arm_control')
+
+	rospy.sleep(0.5)
+	backToOrigin(ur5)
 
 	del ur5
 
