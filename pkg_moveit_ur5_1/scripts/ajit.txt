@@ -1,0 +1,113 @@
+    ur5_pose_0 = geometry_msgs.msg.Pose()
+    ur5_pose_0.position.x = 0.25173465003064693 #start
+    ur5_pose_0.position.y = 0.10915735960767953
+    ur5_pose_0.position.z = 0.824996387923138
+    ur5_pose_0.orientation.x = 0.7074208793842115
+    ur5_pose_0.orientation.y = 0.7067923325991693
+    ur5_pose_0.orientation.z =  0.00048703729422487304
+    ur5_pose_0.orientation.w = 0.00024654607731027173
+
+    ur5_pose_1 = geometry_msgs.msg.Pose()
+    ur5_pose_1.position.x = 0.022593313701578698   #stare
+    ur5_pose_1.position.y = 0.038009739829365306
+    ur5_pose_1.position.z = 0.8250301836608396
+    ur5_pose_1.orientation.x = 0.21286971795917267
+    ur5_pose_1.orientation.y = -0.9770805917033697
+    ur5_pose_1.orientation.z =  -0.00032429050504920626
+    ur5_pose_1.orientation.w = 0.00043793762025833054
+       
+    ur5_pose_2 = geometry_msgs.msg.Pose()   #attack
+    ur5_pose_2.position.x = -0.11970234807888605
+    ur5_pose_2.position.y =  0.3489332052224116
+    ur5_pose_2.position.z = 0.9523766152107148
+    ur5_pose_2.orientation.x = 0.18688438891947592
+    ur5_pose_2.orientation.y = -0.857422004291761
+    ur5_pose_2.orientation.z =-0.46848063914059024
+    ur5_pose_2.orientation.w = 0.1021157308396586
+
+    ur5_pose_3 = geometry_msgs.msg.Pose()    #close
+    ur5_pose_3.position.x = -0.11968579710648994
+    ur5_pose_3.position.y = 0.3489274771095368
+    ur5_pose_3.position.z = 0.9523640685382966
+    ur5_pose_3.orientation.x =0.1868033812885342
+    ur5_pose_3.orientation.y = -0.857445527257226
+    ur5_pose_3.orientation.z = -0.4684824808062077
+    ur5_pose_3.orientation.w =  0.10205797226777283
+   
+    ur5_pose_4 = geometry_msgs.msg.Pose()    #drop
+    ur5_pose_4.position.x =  0.2517175902540913
+    ur5_pose_4.position.y = 0.10914800436244247
+    ur5_pose_4.position.z = 0.8250636809920991
+    ur5_pose_4.orientation.x = 0.707135170052268
+    ur5_pose_4.orientation.y = 0.7070783859922354
+    ur5_pose_4.orientation.z = 7.243568143739047e-06
+    ur5_pose_4.orientation.w =  2.8784688069198546e-05
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+        ur5_pose_0 = geometry_msgs.msg.Pose()
+    ur5_pose_0.position.x = 0.3866640280579029
+ #start
+    ur5_pose_0.position.y = 0.07854487900597022
+    ur5_pose_0.position.z = 0.8250676975808482
+    ur5_pose_0.orientation.x = -4.499920311613906e-05
+    ur5_pose_0.orientation.y = -4.1759199688681495e-05
+    ur5_pose_0.orientation.z =  4.004492387189572e-06
+    ur5_pose_0.orientation.w = 0.9999999981076025
+
+    ur5_pose_1 = geometry_msgs.msg.Pose()
+    ur5_pose_1.position.x = -0.005722433368432027
+   #stare
+    ur5_pose_1.position.y = 0.17338707533949152
+
+    ur5_pose_1.position.z = 0.8250479925504336
+    ur5_pose_1.orientation.x = 7.201525359781248e-05
+
+    ur5_pose_1.orientation.y = -1.6032496651110308e-05
+
+    ur5_pose_1.orientation.z =  0.8421918172218377
+
+    ur5_pose_1.orientation.w =0.5391780202876794
+        ur5_pose_2 = geometry_msgs.msg.Pose()   #attack
+    ur5_pose_2.position.x = -0.12220546709698218
+
+    ur5_pose_2.position.y =  0.4279221055311414
+    ur5_pose_2.position.z = 1.0658527311141295
+    ur5_pose_2.orientation.x = 0.4031472878359867
+
+    ur5_pose_2.orientation.y = -0.25955826996077325
+    ur5_pose_2.orientation.z =0.7390446221469114
+    ur5_pose_2.orientation.w = 0.47416438902783586
+
+    ur5_pose_3 = geometry_msgs.msg.Pose()    #close
+    ur5_pose_3.position.x = -0.12226897500935444
+
+    ur5_pose_3.position.y = 0.42788411404641413
+
+    ur5_pose_3.position.z = 1.0658942331420729
+    ur5_pose_3.orientation.x =0.2707781399596428
+
+    ur5_pose_3.orientation.y = -0.39567920941517953
+    ur5_pose_3.orientation.z = 0.8648044419019324
+    ur5_pose_3.orientation.w =   0.1490987572827551
+   
+    ur5_pose_4 = geometry_msgs.msg.Pose()    #drop
+    ur5_pose_4.position.x =  0.38662490787154535
+
+    ur5_pose_4.position.y = 0.07852686944766107
+
+    ur5_pose_4.position.z = 0.8251020222473139
+    ur5_pose_4.orientation.x = -4.993231232294361e-05
+    ur5_pose_4.orientation.y = -0.00010519085380230696
+    ur5_pose_4.orientation.z = 0.38933058785479213
+    ur5_pose_4.orientation.w =  0.9210979680737361
