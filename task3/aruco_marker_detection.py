@@ -9,12 +9,60 @@ from cv_bridge import CvBridge, CvBridgeError
 import tf2_ros
 import geometry_msgs.msg
 import tf_conversions
+import math
+
+
+class EuclideanDistTracker:
+    def __init__(self):
+        # Store the center positions of the objects
+        self.center_points = {}
+        # Keep the count of the IDs
+        # each time a new object id detected, the count will increase by one
+        self.id_count = 0
+
+
+    def update(self, objects_rect):
+        # Objects boxes and ids
+        objects_bbs_ids = []
+
+        # Get center point of new object
+        for rect in objects_rect:
+            x, y, w, h = rect
+            cx = (x + x + w) // 2
+            cy = (y + y + h) // 2
+
+            # Find out if that object was detected already
+            same_object_detected = False
+            for i, pt in self.center_points.items():
+                dist = math.hypot(cx - pt[0], cy - pt[1])
+
+                if dist < 25:
+                    self.center_points[i] = (cx, cy)
+                    objects_bbs_ids.append([x, y, w, h, i])
+                    same_object_detected = True
+                    break
+
+            # New object is detected we assign the ID to that object
+            if same_object_detected is False:
+                self.center_points[self.id_count] = (cx, cy)
+                objects_bbs_ids.append([x, y, w, h, self.id_count])
+                self.id_count += 1
+
+        # Clean the dictionary by center points to remove IDS not used anymore
+        new_center_points = {}
+        for obj_bb_id in objects_bbs_ids:
+            _, _, _, _, object_id = obj_bb_id
+            center = self.center_points[object_id]
+            new_center_points[object_id] = center
+
+        # Update dictionary with IDs not used removed
+        self.center_points = new_center_points.copy()
+        return objects_bbs_ids
+
 
 cv_image = None
 depth_image = None
-tracker = cv.legacy.TrackerMOSSE_create()
-multiTracker = cv.legacy.MultiTracker_create()
-
+tracker = EuclideanDistTracker()
 
 
 def depth_callback(msg):
@@ -33,7 +81,7 @@ def getDepth(x, y):
 
 def callback(data):
     # Initializing variables
-    global cv_image, tracker, multiTracker
+    global cv_image, tracker
     focal_length = 554.387
     center_x = 320.5
     center_y = 240.5
@@ -41,6 +89,8 @@ def callback(data):
     try:
         bridge = CvBridge()
         frame = bridge.imgmsg_to_cv2(data, "bgr8")
+        #resizing the rgb image to match the depth image
+        frame = frame[:600, :460]
         img_hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
 
         mask1 = cv.inRange(img_hsv, (0,70,150), (10,255,255))
@@ -49,37 +99,33 @@ def callback(data):
         mask = cv.bitwise_or(mask1, mask2)
 
         (contours,_) = cv.findContours(mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-
+        detections = []
         for c in contours:
             area = cv.contourArea(c)
-            if(area>100):
+            if(area>200):
                 x, y, w, h = cv.boundingRect(c)
                 #calculating the centre of the frame
-                # to avoid repeating the same tomato, we check the distance between this centre and centres of other tomatoes
-                multiTracker.add(tracker, frame, (x, y, w, h))
-                success, boxes = multiTracker.update(frame)
-                for j, newbox in enumerate(boxes):
-                    p1 = (int(newbox[0]), int(newbox[1]))
-                    p2 = (int(newbox[0] + newbox[2]), int(newbox[1] + newbox[3]))
-                    cv.rectangle(frame, p1, p2, (255, 255, 255), 1, 1)
-                    cv.circle(frame, (int(newbox[0] + (newbox[2]//2)), int(newbox[1] + (newbox[3]//2))), 1, (255, 255, 255), 2)
-                    #cv.putText(frame, ("Ob"+str(j)), (int(newbox[0] + (newbox[2]//2)), int(newbox[1] - 0.5 + (newbox[3]//2))), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
-                    cX = int(newbox[0] + (newbox[2]//2))
-                    cY = int(newbox[1] + (newbox[3]//2))
-                    if cX > 470:
-                        cX = 470
+                cX = int(x) + (w//2)
+                cY = int(y) + (h//2)
+                cv.rectangle(frame, (x, y), (x+w, y+h), (255, 255, 255), 2)
+                detections.append([x, y, w, h])
+                boxes_ids = tracker.update(detections)
+                for box_id in boxes_ids:
+                    x, y, w, h, i = box_id
+                    cv.putText(frame, "Ob"+str(i), (cX, cY), cv.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), 1)
+                    cv.rectangle(frame, (x, y), (x+w, y+h), (255, 255, 255), 2)
                     # transforming pixel coordinates to world coordinates
                     cf_d = getDepth(cX, cY)
                     world_x = ((cX - center_x)/focal_length)*cf_d
                     world_y = ((cY - center_y)/focal_length)*cf_d
                     world_z = cf_d
 
-                # broadcasting TF for each aruco marker
+                    # broadcasting TF for each aruco marker
                     br = tf2_ros.TransformBroadcaster()
                     t = geometry_msgs.msg.TransformStamped()
                     t.header.stamp = rospy.Time.now()
                     t.header.frame_id = "camera_rgb_frame2"
-                    t.child_frame_id = str(j)
+                    t.child_frame_id = "Ob" + str(i)
 
                     if not (np.isnan(world_x) or np.isnan(world_y) or np.isnan(world_z)):
                         # putting world coordinates coordinates as viewed for rgb_frame2 cam
@@ -102,7 +148,7 @@ def callback(data):
 def main(args):
     rospy.init_node('aruco_tf', anonymous=True)
     #subscribing to /ebot/camera1/image_raw topic which is the image frame of sjcam camera
-    rospy.Subscriber("/camera/color/image_raw2", Image, callback, queue_size = 10)
+    rospy.Subscriber("/camera/color/image_raw2", Image, callback)
     rospy.Subscriber("/camera/depth/image_raw2", Image, depth_callback)
     try:
         rospy.spin()
