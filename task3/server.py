@@ -42,27 +42,15 @@ class Ur5Moveit:
 		self._planning_frame = self._group[groupName].get_planning_frame()
 		self._eef_link = self._group[groupName].get_end_effector_link()
 		pose_values = self._group[groupName].get_current_pose().pose
-		rospy.loginfo('\033[94m' + ">>> Current Pose:" + '\033[0m')
-		rospy.loginfo(pose_values)
+		#rospy.loginfo('\033[94m' + ">>> Current Pose:" + '\033[0m')
+		#rospy.loginfo(pose_values)
 
-		self._group[groupName].set_pose_target(arg_pose)
+		a = self._group[groupName].set_pose_target(arg_pose)
+		#rospy.loginfo(a)
 		self._group[groupName].set_goal_tolerance(0.01)
-		self._group[groupName].plan()
-		flag_plan = self._group[groupName].go(wait=True)  # wait=False for Async Move
-
-		pose_values = self._group[groupName].get_current_pose().pose
-		rospy.loginfo('\033[94m' + ">>> Final Pose:" + '\033[0m')
-		rospy.loginfo(pose_values)
-
-		list_joint_values = self._group[groupName].get_current_joint_values()
-		rospy.loginfo('\033[94m' + ">>> Final Joint Values:" + '\033[0m')
-		rospy.loginfo(list_joint_values)
-
-		if (flag_plan == True):
-			rospy.loginfo('\033[94m' + ">>> go_to_pose() Success" + '\033[0m')
-		else:
-			rospy.logerr('\033[94m' + ">>> go_to_pose() Failed. Solution for Pose not Found." + '\033[0m')
-			
+		s =  self._group[groupName].plan()
+		if len(s[1].joint_trajectory.points) > 0:
+			return s[1].joint_trajectory.points[len(s[1].joint_trajectory.points)-1].positions			
 			
 	def go_to_predefined_pose(self, arg_pose_name, groupName):
 		self._planning_frame = self._group[groupName].get_planning_frame()
@@ -75,6 +63,11 @@ class Ur5Moveit:
 		goal.trajectory = plan
 		flag_plan = self._group[groupName].go(wait=True)
 		rospy.loginfo('\033[94m' + "Now at Pose: {}".format(arg_pose_name) + '\033[0m')
+	
+	def set_joint_angles(self, arg_list_joint_angles):
+		self._group['arm_control'].set_joint_value_target(arg_list_joint_angles)
+		self._group['arm_control'].plan()
+		flag_plan = self._group['arm_control'].go(wait=True)
 
 
     # Destructor
@@ -111,22 +104,18 @@ def main():
 				if ((x_cod - det[0]) **2) + ((y_cod - det[1])**2) + ((z_cod - det[2])**2) < 0.5:
 					flag = False
 			if flag == True: 
-				ur5_pose_2 = geometry_msgs.msg.Pose()
-				ur5_pose_2.position.x = x_cod + 0.03
-				ur5_pose_2.position.y = y_cod + 0.2
-				ur5_pose_2.position.z = z_cod
-				ur5_pose_2.orientation.x = 0.0
-				ur5_pose_2.orientation.y = 0.0
-				ur5_pose_2.orientation.z = -0.706
-				ur5_pose_2.orientation.w = 0.707
-				ur5.go_to_pose(ur5_pose_2, 'arm_control')
-				rospy.sleep(1)
-				#ur5.go_to_predefined_pose('up', 'wrist_control')
-				#rospy.sleep(0.5)
-				backToOrigin(ur5)
-				detections.append([x_cod, y_cod, z_cod])
-				ur5.go_to_predefined_pose('camera_pose', 'arm_control')
-				rospy.sleep(1)
+				ur5.go_to_predefined_pose('shoulder_move', 'arm_control')
+            			ur5_pose_1 = geometry_msgs.msg.Pose()
+            			ur5_pose_1.position.x = x_cod + 0.05
+            			ur5_pose_1.position.y = y_cod + 0.2
+            			ur5_pose_1.position.z = z_cod
+            			ur5_pose_1.orientation.x = euler_to_quaternion(3.14, 0, -3.14)[0]
+            			ur5_pose_1.orientation.y = euler_to_quaternion(3.14, 0, -3.14)[1]
+            			ur5_pose_1.orientation.z = euler_to_quaternion(3.14, 0, -3.14)[2]
+            			ur5_pose_1.orientation.w = euler_to_quaternion(3.14, 0, -3.14)[3]
+            			joint_list = ur5.go_to_pose(ur5_pose_1, 'arm_control')
+            			ur5.set_joint_angles(joint_list)
+            			rospy.sleep(1)
 		except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
 			pass
 
